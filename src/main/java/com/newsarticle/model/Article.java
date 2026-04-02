@@ -1,22 +1,18 @@
 package com.newsarticle.model;
 
-/**
- * Represents a news article fetched from NewsAPI.
- * Maps to both the API JSON response and the database schema.
- */
 public class Article {
 
-    private int id;               // Database ID (auto-increment)
-    private String source;        // Source name (e.g., "BBC News")
-    private String author;        // Author name
-    private String title;         // Article title
-    private String description;   // Short description/summary
-    private String url;           // Full article URL (used as unique key)
-    private String urlToImage;    // Article image URL
-    private String publishedAt;   // Publication date (ISO 8601)
-    private String content;       // Truncated article content
-    private String category;      // Category (if applicable)
-    private String savedAt;       // When the article was saved locally
+    private int id;
+    private String source;
+    private String author;
+    private String title;
+    private String description;
+    private String url;
+    private String urlToImage;
+    private String publishedAt;
+    private String content;
+    private String category;
+    private String savedAt;
 
     public Article() {
     }
@@ -32,8 +28,6 @@ public class Article {
         this.publishedAt = publishedAt;
         this.content = content;
     }
-
-    // --- Getters and Setters ---
 
     public int getId() {
         return id;

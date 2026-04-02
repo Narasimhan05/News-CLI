@@ -18,10 +18,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * HTTP client for interacting with the NewsAPI.
- * Handles API calls, JSON parsing, and internal pagination.
- */
 public class NewsApiClient {
 
     private final HttpClient httpClient;
@@ -38,10 +34,6 @@ public class NewsApiClient {
         this.pageSize = Config.getApiPageSize();
     }
 
-    /**
-     * Fetch top headlines with optional category filter.
-     * Handles pagination internally to fetch all available results.
-     */
     public ApiResponse getTopHeadlines(String category) {
         String country = Config.getDefaultCountry();
         StringBuilder urlBuilder = new StringBuilder(baseUrl)
@@ -55,10 +47,6 @@ public class NewsApiClient {
         return fetchWithPagination(urlBuilder.toString());
     }
 
-    /**
-     * Search articles by keyword with optional date range.
-     * Handles pagination internally.
-     */
     public ApiResponse searchArticles(String keyword, String fromDate, String toDate) {
         StringBuilder urlBuilder = new StringBuilder(baseUrl)
                 .append("/everything?q=").append(encode(keyword))
@@ -77,15 +65,11 @@ public class NewsApiClient {
         return fetchWithPagination(urlBuilder.toString());
     }
 
-    /**
-     * Fetch results with internal pagination.
-     * Fetches up to 3 pages (60 articles max for free tier).
-     */
     private ApiResponse fetchWithPagination(String baseRequestUrl) {
         List<Article> allArticles = new ArrayList<>();
         int totalResults = 0;
         int currentPage = 1;
-        int maxPages = 3; // Limit to avoid API rate limits on free tier
+        int maxPages = 3;
 
         while (currentPage <= maxPages) {
             String url = baseRequestUrl + "&page=" + currentPage + "&apiKey=" + apiKey;
@@ -130,7 +114,6 @@ public class NewsApiClient {
                     }
                 }
 
-                // Check if we've fetched all available articles
                 if (allArticles.size() >= totalResults || articlesArray.size() < pageSize) {
                     break;
                 }
@@ -152,9 +135,6 @@ public class NewsApiClient {
         return new ApiResponse("ok", totalResults, allArticles);
     }
 
-    /**
-     * Parse a single article JSON object into an Article model.
-     */
     private Article parseArticle(JsonObject json) {
         try {
             String source = "";
@@ -173,17 +153,13 @@ public class NewsApiClient {
                     getStringOrNull(json, "url"),
                     getStringOrNull(json, "urlToImage"),
                     getStringOrNull(json, "publishedAt"),
-                    getStringOrNull(json, "content")
-            );
+                    getStringOrNull(json, "content"));
         } catch (Exception e) {
             System.err.println("  Warning: Could not parse article: " + e.getMessage());
             return null;
         }
     }
 
-    /**
-     * Parse an error response from the API.
-     */
     private ApiResponse parseErrorResponse(String body, int statusCode) {
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
@@ -196,9 +172,6 @@ public class NewsApiClient {
         }
     }
 
-    /**
-     * Helper to safely get a string from a JSON object.
-     */
     private String getStringOrNull(JsonObject json, String key) {
         if (json.has(key) && !json.get(key).isJsonNull()) {
             return json.get(key).getAsString();
@@ -206,9 +179,6 @@ public class NewsApiClient {
         return null;
     }
 
-    /**
-     * URL-encode a string.
-     */
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }

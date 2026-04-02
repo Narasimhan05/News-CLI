@@ -6,17 +6,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Repository class for Article CRUD operations.
- * Handles saving, querying, and deleting articles in MySQL.
- * Uses INSERT IGNORE on URL to prevent duplicates.
- */
 public class ArticleRepository {
 
-    /**
-     * Save an article to the database.
-     * Returns true if inserted, false if duplicate (URL already exists).
-     */
     public boolean save(Article article) {
         String sql = """
                 INSERT IGNORE INTO articles 
@@ -43,9 +34,6 @@ public class ArticleRepository {
         }
     }
 
-    /**
-     * Save multiple articles. Returns count of newly inserted articles.
-     */
     public int saveAll(List<Article> articles) {
         int savedCount = 0;
         for (Article article : articles) {
@@ -56,17 +44,11 @@ public class ArticleRepository {
         return savedCount;
     }
 
-    /**
-     * Retrieve all saved articles, ordered by saved date (newest first).
-     */
     public List<Article> findAll() {
         String sql = "SELECT * FROM articles ORDER BY saved_at DESC";
         return executeQuery(sql);
     }
 
-    /**
-     * Find articles by keyword in title or description.
-     */
     public List<Article> findByKeyword(String keyword) {
         String sql = """
                 SELECT * FROM articles 
@@ -90,9 +72,6 @@ public class ArticleRepository {
         return articles;
     }
 
-    /**
-     * Find articles by category.
-     */
     public List<Article> findByCategory(String category) {
         String sql = "SELECT * FROM articles WHERE category = ? ORDER BY published_at DESC";
 
@@ -110,9 +89,6 @@ public class ArticleRepository {
         return articles;
     }
 
-    /**
-     * Find an article by its database ID.
-     */
     public Article findById(int id) {
         String sql = "SELECT * FROM articles WHERE id = ?";
 
@@ -128,9 +104,6 @@ public class ArticleRepository {
         return null;
     }
 
-    /**
-     * Check if an article with the given URL already exists.
-     */
     public boolean existsByUrl(String url) {
         String sql = "SELECT COUNT(*) FROM articles WHERE url = ?";
 
@@ -146,9 +119,6 @@ public class ArticleRepository {
         return false;
     }
 
-    /**
-     * Delete an article by its database ID.
-     */
     public boolean deleteById(int id) {
         String sql = "DELETE FROM articles WHERE id = ?";
 
@@ -161,9 +131,6 @@ public class ArticleRepository {
         }
     }
 
-    /**
-     * Get the count of saved articles.
-     */
     public int count() {
         String sql = "SELECT COUNT(*) FROM articles";
 
@@ -177,8 +144,6 @@ public class ArticleRepository {
         }
         return 0;
     }
-
-    // --- Private Helpers ---
 
     private List<Article> executeQuery(String sql) {
         List<Article> articles = new ArrayList<>();

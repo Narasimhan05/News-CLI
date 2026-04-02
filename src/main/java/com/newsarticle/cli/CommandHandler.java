@@ -11,22 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Handles execution of parsed CLI commands.
- * Acts as the bridge between user input and application logic.
- */
 public class CommandHandler {
 
     private final NewsApiClient apiClient;
     private final ArticleRepository repository;
-
-    // Stores the last fetched articles for save-by-index functionality
     private List<Article> lastFetchedArticles;
 
     private static final Set<String> VALID_CATEGORIES = Set.of(
             "business", "entertainment", "general", "health",
-            "science", "sports", "technology"
-    );
+            "science", "sports", "technology");
 
     public CommandHandler() {
         this.apiClient = new NewsApiClient();
@@ -34,27 +27,21 @@ public class CommandHandler {
         this.lastFetchedArticles = new ArrayList<>();
     }
 
-    /**
-     * Execute a parsed command.
-     */
     public void handle(CommandParser cmd) {
         switch (cmd.getCommand()) {
-            case "latest"  -> handleLatest(cmd);
-            case "search"  -> handleSearch(cmd);
-            case "save"    -> handleSave(cmd);
-            case "saved"   -> handleSaved(cmd);
-            case "delete"  -> handleDelete(cmd);
-            case "clear"   -> handleClear();
-            case "help"    -> ConsoleFormatter.displayHelp();
+            case "latest" -> handleLatest(cmd);
+            case "search" -> handleSearch(cmd);
+            case "save" -> handleSave(cmd);
+            case "saved" -> handleSaved(cmd);
+            case "delete" -> handleDelete(cmd);
+            case "clear" -> handleClear();
+            case "help" -> ConsoleFormatter.displayHelp();
             case "exit", "quit", "q" -> handleExit();
-            default        -> ConsoleFormatter.printError(
+            default -> ConsoleFormatter.printError(
                     "Unknown command: '" + cmd.getCommand() + "'. Type 'help' for available commands.");
         }
     }
 
-    /**
-     * Handle 'latest' command - fetch top headlines.
-     */
     private void handleLatest(CommandParser cmd) {
         if (!checkApiKey()) return;
 
@@ -67,7 +54,7 @@ public class CommandHandler {
 
         String header = "Latest Headlines";
         if (category != null) {
-            header += " — " + capitalize(category);
+            header += " - " + capitalize(category);
         }
 
         ConsoleFormatter.printLoading("Fetching latest headlines");
@@ -88,9 +75,6 @@ public class CommandHandler {
         }
     }
 
-    /**
-     * Handle 'search' command - search articles by keyword.
-     */
     private void handleSearch(CommandParser cmd) {
         if (!checkApiKey()) return;
 
@@ -104,7 +88,6 @@ public class CommandHandler {
         String fromDate = cmd.getFlag("from");
         String toDate = cmd.getFlag("to");
 
-        // Validate date format
         if (fromDate != null && !isValidDate(fromDate)) {
             ConsoleFormatter.printError("Invalid --from date format. Use YYYY-MM-DD.");
             return;
@@ -136,9 +119,6 @@ public class CommandHandler {
         }
     }
 
-    /**
-     * Handle 'save' command - save an article by its display index.
-     */
     private void handleSave(CommandParser cmd) {
         String indexStr = cmd.getFirstArg();
         if (indexStr == null) {
@@ -180,17 +160,11 @@ public class CommandHandler {
         }
     }
 
-    /**
-     * Handle 'saved' command - display all saved articles.
-     */
     private void handleSaved(CommandParser cmd) {
         List<Article> savedArticles = repository.findAll();
         ConsoleFormatter.displaySavedArticles(savedArticles);
     }
 
-    /**
-     * Handle 'delete' command - delete a saved article by display index.
-     */
     private void handleDelete(CommandParser cmd) {
         String indexStr = cmd.getFirstArg();
         if (indexStr == null) {
@@ -227,26 +201,17 @@ public class CommandHandler {
         }
     }
 
-    /**
-     * Handle 'clear' command.
-     */
     private void handleClear() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
         ConsoleFormatter.displayBanner();
     }
 
-    /**
-     * Handle 'exit' command.
-     */
     private void handleExit() {
-        ConsoleFormatter.printInfo("Goodbye! 👋");
+        ConsoleFormatter.printInfo("Goodbye!");
         System.exit(0);
     }
 
-    /**
-     * Check if the API key is configured.
-     */
     private boolean checkApiKey() {
         if (!Config.isApiKeyConfigured()) {
             ConsoleFormatter.printError("API key not configured!");
@@ -257,24 +222,15 @@ public class CommandHandler {
         return true;
     }
 
-    /**
-     * Validate date format (YYYY-MM-DD).
-     */
     private boolean isValidDate(String date) {
         return date.matches("\\d{4}-\\d{2}-\\d{2}");
     }
 
-    /**
-     * Capitalize the first letter of a string.
-     */
     private String capitalize(String str) {
         if (str == null || str.isEmpty()) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
 
-    /**
-     * Truncate a string to the given max length.
-     */
     private String truncate(String str, int maxLen) {
         if (str == null) return "";
         return str.length() <= maxLen ? str : str.substring(0, maxLen - 3) + "...";

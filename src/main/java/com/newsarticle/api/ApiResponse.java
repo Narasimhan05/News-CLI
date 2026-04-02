@@ -4,10 +4,6 @@ import com.newsarticle.model.Article;
 
 import java.util.List;
 
-/**
- * Represents the parsed response from NewsAPI.
- * Contains the list of articles, total results count, and status.
- */
 public class ApiResponse {
 
     private String status;
@@ -38,8 +34,6 @@ public class ApiResponse {
     public boolean isSuccess() {
         return "ok".equalsIgnoreCase(status);
     }
-
-    // --- Getters and Setters ---
 
     public String getStatus() {
         return status;
