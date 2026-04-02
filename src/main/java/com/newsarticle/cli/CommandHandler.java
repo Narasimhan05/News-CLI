@@ -3,6 +3,9 @@ package com.newsarticle.cli;
 import com.newsarticle.api.ApiResponse;
 import com.newsarticle.api.NewsApiClient;
 import com.newsarticle.db.ArticleRepository;
+import com.newsarticle.db.CategoryRepository;
+import com.newsarticle.db.FetchLogRepository;
+import com.newsarticle.db.SearchHistoryRepository;
 import com.newsarticle.model.Article;
 import com.newsarticle.util.Config;
 import com.newsarticle.util.ConsoleFormatter;
@@ -15,6 +18,9 @@ public class CommandHandler {
 
     private final NewsApiClient apiClient;
     private final ArticleRepository repository;
+    private final CategoryRepository categoryRepository;
+    private final SearchHistoryRepository searchHistoryRepository;
+    private final FetchLogRepository fetchLogRepository;
     private List<Article> lastFetchedArticles;
 
     private static final Set<String> VALID_CATEGORIES = Set.of(
@@ -24,6 +30,9 @@ public class CommandHandler {
     public CommandHandler() {
         this.apiClient = new NewsApiClient();
         this.repository = new ArticleRepository();
+        this.categoryRepository = new CategoryRepository();
+        this.searchHistoryRepository = new SearchHistoryRepository();
+        this.fetchLogRepository = new FetchLogRepository();
         this.lastFetchedArticles = new ArrayList<>();
     }
 
@@ -64,10 +73,24 @@ public class CommandHandler {
         if (!response.isSuccess()) {
             ConsoleFormatter.printError("API Error [" + response.getErrorCode() + "]: "
                     + response.getErrorMessage());
+
+            // Log failed fetch
+            int categoryId = (category != null) ? categoryRepository.findIdByName(category) : 0;
+            fetchLogRepository.logFetch(1, Config.getApiPageSize(), 0, "error", categoryId);
             return;
         }
 
+        // Log successful fetch
+        int categoryId = (category != null) ? categoryRepository.findIdByName(category) : 0;
+        int fetchLogId = fetchLogRepository.logFetch(1, Config.getApiPageSize(),
+                response.getTotalResults(), "ok", categoryId);
+
+        // Set fetch log ID on articles
         lastFetchedArticles = response.getArticles();
+        for (Article article : lastFetchedArticles) {
+            article.setFetchedAt(fetchLogId);
+        }
+
         ConsoleFormatter.displayArticles(lastFetchedArticles, header, response.getTotalResults());
 
         if (!lastFetchedArticles.isEmpty()) {
@@ -108,10 +131,24 @@ public class CommandHandler {
         if (!response.isSuccess()) {
             ConsoleFormatter.printError("API Error [" + response.getErrorCode() + "]: "
                     + response.getErrorMessage());
+
+            // Log failed search
+            searchHistoryRepository.logSearch(keyword, fromDate, toDate, 0, 0);
             return;
         }
 
+        // Log successful search
+        searchHistoryRepository.logSearch(keyword, fromDate, toDate, response.getTotalResults(), 0);
+
+        // Log the fetch
+        int fetchLogId = fetchLogRepository.logFetch(1, Config.getApiPageSize(),
+                response.getTotalResults(), "ok", 0);
+
         lastFetchedArticles = response.getArticles();
+        for (Article article : lastFetchedArticles) {
+            article.setFetchedAt(fetchLogId);
+        }
+
         ConsoleFormatter.displayArticles(lastFetchedArticles, header.toString(), response.getTotalResults());
 
         if (!lastFetchedArticles.isEmpty()) {

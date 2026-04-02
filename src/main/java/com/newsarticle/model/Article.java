@@ -3,23 +3,27 @@ package com.newsarticle.model;
 public class Article {
 
     private int id;
-    private String source;
-    private String author;
     private String title;
     private String description;
-    private String url;
-    private String urlToImage;
-    private String publishedAt;
     private String content;
+    private String url;
+    private String author;
+    private String publishedAt;
+    private int fetchedAt;
+    private int sourceId;
     private String category;
+    private String urlToImage;
     private String savedAt;
+
+    // Transient fields for display (not stored as FK)
+    private String sourceName;
 
     public Article() {
     }
 
     public Article(String source, String author, String title, String description,
                    String url, String urlToImage, String publishedAt, String content) {
-        this.source = source;
+        this.sourceName = source;
         this.author = author;
         this.title = title;
         this.description = description;
@@ -35,22 +39,6 @@ public class Article {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 
     public String getTitle() {
@@ -69,6 +57,14 @@ public class Article {
         this.description = description;
     }
 
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
     public String getUrl() {
         return url;
     }
@@ -77,12 +73,12 @@ public class Article {
         this.url = url;
     }
 
-    public String getUrlToImage() {
-        return urlToImage;
+    public String getAuthor() {
+        return author;
     }
 
-    public void setUrlToImage(String urlToImage) {
-        this.urlToImage = urlToImage;
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getPublishedAt() {
@@ -93,12 +89,20 @@ public class Article {
         this.publishedAt = publishedAt;
     }
 
-    public String getContent() {
-        return content;
+    public int getFetchedAt() {
+        return fetchedAt;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setFetchedAt(int fetchedAt) {
+        this.fetchedAt = fetchedAt;
+    }
+
+    public int getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(int sourceId) {
+        this.sourceId = sourceId;
     }
 
     public String getCategory() {
@@ -109,6 +113,14 @@ public class Article {
         this.category = category;
     }
 
+    public String getUrlToImage() {
+        return urlToImage;
+    }
+
+    public void setUrlToImage(String urlToImage) {
+        this.urlToImage = urlToImage;
+    }
+
     public String getSavedAt() {
         return savedAt;
     }
@@ -117,11 +129,19 @@ public class Article {
         this.savedAt = savedAt;
     }
 
+    public String getSource() {
+        return sourceName;
+    }
+
+    public void setSource(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
     @Override
     public String toString() {
         return "Article{" +
                 "title='" + title + '\'' +
-                ", source='" + source + '\'' +
+                ", source='" + sourceName + '\'' +
                 ", publishedAt='" + publishedAt + '\'' +
                 ", url='" + url + '\'' +
                 '}';

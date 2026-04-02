@@ -42,31 +42,91 @@ public class DatabaseManager {
     }
 
     private static void createTables() throws SQLException {
-        String createArticlesTable = """
+        try (Statement stmt = connection.createStatement()) {
+
+            // 1. CATEGORY table
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS category (
+                    id          INT AUTO_INCREMENT PRIMARY KEY,
+                    name        VARCHAR(100) NOT NULL UNIQUE,
+                    description TEXT
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
+
+            // 2. SOURCE table
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS source (
+                    id            INT AUTO_INCREMENT PRIMARY KEY,
+                    api_source_id VARCHAR(255),
+                    name          VARCHAR(255) NOT NULL,
+                    language      VARCHAR(10),
+                    country       VARCHAR(10)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
+
+            // 3. FETCH_LOG table
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS fetch_log (
+                    id            INT AUTO_INCREMENT PRIMARY KEY,
+                    page_number   INT,
+                    page_size     INT,
+                    total_results INT,
+                    status        VARCHAR(50),
+                    fetched_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    category_id   INT,
+                    FOREIGN KEY (category_id) REFERENCES category(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
+
+            // 4. ARTICLE table
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS articles (
                     id           INT AUTO_INCREMENT PRIMARY KEY,
-                    source       VARCHAR(255),
-                    author       VARCHAR(255),
                     title        VARCHAR(500) NOT NULL,
                     description  TEXT,
-                    url          VARCHAR(2048) UNIQUE NOT NULL,
-                    url_to_image VARCHAR(2048),
-                    published_at VARCHAR(50),
                     content      TEXT,
+                    url          VARCHAR(2048) UNIQUE NOT NULL,
+                    author       VARCHAR(255),
+                    published_at VARCHAR(50),
+                    fetched_at   INT,
+                    source_id    INT,
                     category     VARCHAR(50),
-                    saved_at     DATETIME DEFAULT CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                """;
+                    url_to_image VARCHAR(2048),
+                    saved_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (fetched_at) REFERENCES fetch_log(id),
+                    FOREIGN KEY (source_id) REFERENCES source(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
 
-        String createDateIndex = """
-                CREATE INDEX idx_articles_published ON articles(published_at)
-                """;
+            // 5. HISTORY table
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS history (
+                    id           INT AUTO_INCREMENT PRIMARY KEY,
+                    keyword      VARCHAR(255),
+                    from_date    VARCHAR(20),
+                    to_date      VARCHAR(20),
+                    result_count INT DEFAULT 0,
+                    searched_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    category_id  INT,
+                    FOREIGN KEY (category_id) REFERENCES category(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
 
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(createArticlesTable);
+            // Seed default categories
+            stmt.execute("""
+                INSERT IGNORE INTO category (name, description) VALUES
+                ('business', 'Business news'),
+                ('entertainment', 'Entertainment news'),
+                ('general', 'General news'),
+                ('health', 'Health news'),
+                ('science', 'Science news'),
+                ('sports', 'Sports news'),
+                ('technology', 'Technology news')
+            """);
 
+            // Create index on articles published_at
             try {
-                stmt.execute(createDateIndex);
+                stmt.execute("CREATE INDEX idx_articles_published ON articles(published_at)");
             } catch (SQLException e) {
                 // Index already exists
             }

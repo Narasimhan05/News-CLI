@@ -8,23 +8,42 @@ import java.util.List;
 
 public class ArticleRepository {
 
+    private final SourceRepository sourceRepository = new SourceRepository();
+
     public boolean save(Article article) {
+        int sourceId = 0;
+        if (article.getSource() != null && !article.getSource().isBlank()) {
+            sourceId = sourceRepository.findOrCreate(null, article.getSource());
+        }
+
         String sql = """
                 INSERT IGNORE INTO articles 
-                (source, author, title, description, url, url_to_image, published_at, content, category)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (title, description, content, url, author, published_at, fetched_at, source_id, category, url_to_image)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (PreparedStatement pstmt = DatabaseManager.getConnection().prepareStatement(sql)) {
-            pstmt.setString(1, article.getSource());
-            pstmt.setString(2, article.getAuthor());
-            pstmt.setString(3, article.getTitle());
-            pstmt.setString(4, article.getDescription());
-            pstmt.setString(5, article.getUrl());
-            pstmt.setString(6, article.getUrlToImage());
-            pstmt.setString(7, article.getPublishedAt());
-            pstmt.setString(8, article.getContent());
+            pstmt.setString(1, article.getTitle());
+            pstmt.setString(2, article.getDescription());
+            pstmt.setString(3, article.getContent());
+            pstmt.setString(4, article.getUrl());
+            pstmt.setString(5, article.getAuthor());
+            pstmt.setString(6, article.getPublishedAt());
+
+            if (article.getFetchedAt() > 0) {
+                pstmt.setInt(7, article.getFetchedAt());
+            } else {
+                pstmt.setNull(7, Types.INTEGER);
+            }
+
+            if (sourceId > 0) {
+                pstmt.setInt(8, sourceId);
+            } else {
+                pstmt.setNull(8, Types.INTEGER);
+            }
+
             pstmt.setString(9, article.getCategory());
+            pstmt.setString(10, article.getUrlToImage());
 
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -45,15 +64,22 @@ public class ArticleRepository {
     }
 
     public List<Article> findAll() {
-        String sql = "SELECT * FROM articles ORDER BY saved_at DESC";
-        return executeQuery(sql);
+        String sql = """
+                SELECT a.*, s.name as source_name 
+                FROM articles a 
+                LEFT JOIN source s ON a.source_id = s.id 
+                ORDER BY a.saved_at DESC
+                """;
+        return executeQueryWithSource(sql);
     }
 
     public List<Article> findByKeyword(String keyword) {
         String sql = """
-                SELECT * FROM articles 
-                WHERE title LIKE ? OR description LIKE ? 
-                ORDER BY published_at DESC
+                SELECT a.*, s.name as source_name 
+                FROM articles a 
+                LEFT JOIN source s ON a.source_id = s.id 
+                WHERE a.title LIKE ? OR a.description LIKE ? 
+                ORDER BY a.published_at DESC
                 """;
 
         List<Article> articles = new ArrayList<>();
@@ -73,7 +99,13 @@ public class ArticleRepository {
     }
 
     public List<Article> findByCategory(String category) {
-        String sql = "SELECT * FROM articles WHERE category = ? ORDER BY published_at DESC";
+        String sql = """
+                SELECT a.*, s.name as source_name 
+                FROM articles a 
+                LEFT JOIN source s ON a.source_id = s.id 
+                WHERE a.category = ? 
+                ORDER BY a.published_at DESC
+                """;
 
         List<Article> articles = new ArrayList<>();
         try (PreparedStatement pstmt = DatabaseManager.getConnection().prepareStatement(sql)) {
@@ -90,7 +122,12 @@ public class ArticleRepository {
     }
 
     public Article findById(int id) {
-        String sql = "SELECT * FROM articles WHERE id = ?";
+        String sql = """
+                SELECT a.*, s.name as source_name 
+                FROM articles a 
+                LEFT JOIN source s ON a.source_id = s.id 
+                WHERE a.id = ?
+                """;
 
         try (PreparedStatement pstmt = DatabaseManager.getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
@@ -145,7 +182,7 @@ public class ArticleRepository {
         return 0;
     }
 
-    private List<Article> executeQuery(String sql) {
+    private List<Article> executeQueryWithSource(String sql) {
         List<Article> articles = new ArrayList<>();
         try (Statement stmt = DatabaseManager.getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -161,16 +198,25 @@ public class ArticleRepository {
     private Article mapResultSetToArticle(ResultSet rs) throws SQLException {
         Article article = new Article();
         article.setId(rs.getInt("id"));
-        article.setSource(rs.getString("source"));
-        article.setAuthor(rs.getString("author"));
         article.setTitle(rs.getString("title"));
         article.setDescription(rs.getString("description"));
-        article.setUrl(rs.getString("url"));
-        article.setUrlToImage(rs.getString("url_to_image"));
-        article.setPublishedAt(rs.getString("published_at"));
         article.setContent(rs.getString("content"));
+        article.setUrl(rs.getString("url"));
+        article.setAuthor(rs.getString("author"));
+        article.setPublishedAt(rs.getString("published_at"));
+        article.setFetchedAt(rs.getInt("fetched_at"));
+        article.setSourceId(rs.getInt("source_id"));
         article.setCategory(rs.getString("category"));
+        article.setUrlToImage(rs.getString("url_to_image"));
         article.setSavedAt(rs.getString("saved_at"));
+
+        try {
+            String sourceName = rs.getString("source_name");
+            article.setSource(sourceName);
+        } catch (SQLException e) {
+            // source_name not in result set
+        }
+
         return article;
     }
 }
