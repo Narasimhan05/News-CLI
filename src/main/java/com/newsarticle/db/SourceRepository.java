@@ -1,6 +1,5 @@
 package com.newsarticle.db;
 
-import com.newsarticle.model.Source;
 
 import java.sql.*;
 
