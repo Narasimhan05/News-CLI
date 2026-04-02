@@ -1,0 +1,26 @@
+# Compiled class files
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build files
+dependency-reduced-pom.xml
+
+# Database
+*.db
+
+# Environment / config with secrets
+config.properties
+
+# Logs
+*.log
